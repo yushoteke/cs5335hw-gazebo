@@ -1,28 +1,8 @@
 
-Client-server protocol:
+# Gazebo Simulation HW
 
- * Server listens on TCP port.
- * Client connects.
- * Messages are 32-bit length + msgpack msg.
- * Messages can be sent in any order, with any initiator; no responses.
- * Messages are map of string keys including timestamp.
+This contains a simulation setup and sample control program for assignments in a
+university robotics course.
 
-Messages:
-
-General form { topic: String, data: Msg, time: Timestamp }
-
-Either side can subscribe to topics. Messages are only sent to
-subscribers.
-
- * { topic: "subscribe", data: [Topics] }
- * { topic: "unsubscribe", data: [Topics] }
-
-Server -> Client topics (mostly sensors):
-
- * lidar - [{Angle, Distance}]
- * depth -  
- * compass
- * accelerometer
- * encoder
-
- 
+This requires [Gazebo](http://gazebosim.org/) and is intended to work on a
+(non-virtualized) Ubuntu 20.04 or Debian 10 system.
