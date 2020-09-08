@@ -10,3 +10,5 @@ $(LIB):
 clean:
 	rm -rf $(LIB)
 	(cd car_control && make clean)
+
+.PHONY: all $(LIB) clean

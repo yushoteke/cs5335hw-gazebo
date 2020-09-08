@@ -17,7 +17,7 @@ main(int argc, char* argv[])
 {
     cout << "making robot" << endl;
     Robot robot(argc, argv, callback);
-    robot.wait();
+    robot.do_stuff();
 
     return 0;
 }

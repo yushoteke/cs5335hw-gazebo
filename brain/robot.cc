@@ -32,6 +32,13 @@ Robot::Robot(int argc, char* argv[], void (*cb)(Robot*))
         false
     );
 
+    pose_sub = node->Subscribe(
+        string("~/teapot0/pose"),
+        &Robot::on_pose,
+        this,
+        false
+    );
+
     cout << "robot created" << endl;
 }
 

@@ -9,17 +9,22 @@ using std::vector;
 using namespace gazebo;
 using physics::ModelPtr;
 using physics::JointControllerPtr;
+using ignition::math::Pose3d;
+using common::Time;
 
 class CarControlPlugin : public ModelPlugin
 {
-  public:
+public:
     physics::ModelPtr model;
     vector<string> drive_joints;
     vector<string> steer_joints;
 
     transport::NodePtr node;
+
     transport::SubscriberPtr vel_sub;
     transport::SubscriberPtr turn_sub;
+    transport::SubscriberPtr stat_sub;
+
     transport::PublisherPtr  pose_pub;
 
     CarControlPlugin() {}
@@ -28,7 +33,7 @@ class CarControlPlugin : public ModelPlugin
     SetSpeed(double speed)
     {
         auto jc = model->GetJointController();
-        for (auto name: this->drive_joints) {
+        for (auto name : this->drive_joints) {
             jc->SetVelocityTarget(name, speed);
         }
     }
@@ -37,7 +42,7 @@ class CarControlPlugin : public ModelPlugin
     SetTurn(double turn)
     {
         auto jc = model->GetJointController();
-        for (auto name: this->steer_joints) {
+        for (auto name : this->steer_joints) {
             jc->SetPositionTarget(name, turn);
         }
     }
@@ -101,15 +106,24 @@ class CarControlPlugin : public ModelPlugin
         this->node = transport::NodePtr(new transport::Node());
         this->node->Init(world_name);
 
-        std::string vel_cmd_topic = "~/" + model_name + "/vel_cmd";
+        string vel_cmd_topic = "~/" + model_name + "/vel_cmd";
         this->vel_sub = this->node->Subscribe(
             vel_cmd_topic, &CarControlPlugin::OnVelCmd, this);
         std::cerr << "Subscribed vel_cmd" << std::endl;
 
-        std::string turn_cmd_topic = "~/" + model_name + "/turn_cmd";
+        string turn_cmd_topic = "~/" + model_name + "/turn_cmd";
         this->turn_sub = this->node->Subscribe(
             turn_cmd_topic, &CarControlPlugin::OnTurnCmd, this);
         std::cerr << "Subscribed turn_cmd" << std::endl;
+
+        string stats_topic = "~/world_stats";
+        this->stat_sub = this->node->Subscribe(
+            stats_topic, &CarControlPlugin::OnStats, this);
+        std::cerr << "Subscribed world_stats" << std::endl;
+
+        string pose_topic = "~/" + model_name + "/pose";
+        this->pose_pub = this->node->Advertise<msgs::PoseStamped>(pose_topic);
+        std::cerr << "Advertised pose" << std::endl;
     }
 
     void
@@ -126,6 +140,47 @@ class CarControlPlugin : public ModelPlugin
         auto turn = msg->double_value();
         std::cerr << "Got turn cmd: " << turn << std::endl;
         this->SetTurn(turn);
+    }
+
+    msgs::PoseStamped
+    make_pose_msg(Time time, Pose3d pose)
+    {
+        msgs::PoseStamped ps;
+        // time (Time)
+        auto time_msg = ps.mutable_time();
+        time_msg->set_sec(time.sec);
+        time_msg->set_nsec(time.nsec);
+
+        // pose (Pose)
+        auto pose_msg = ps.mutable_pose();
+
+        // // position (Vector3d)
+        auto pos = pose.Pos();
+        auto pos_msg = pose_msg->mutable_position();
+        pos_msg->set_x(pos.X());
+        pos_msg->set_y(pos.Y());
+        pos_msg->set_z(pos.Z());
+
+        // // orientation (Quaternion)
+        auto ori = pose.Rot();
+        auto ori_msg = pose_msg->mutable_orientation();
+        ori_msg->set_x(ori.X());
+        ori_msg->set_y(ori.Y());
+        ori_msg->set_z(ori.Z());
+        ori_msg->set_w(ori.W());
+
+        return ps;
+    }
+
+    void
+    OnStats(ConstAnyPtr &_msg)
+    {
+        auto pose = this->model->WorldPose();
+        auto time = Time::GetWallTime();
+        auto msg = make_pose_msg(time, pose);
+
+        //std::cerr << "pose: " << msg.ShortDebugString() << std::endl;
+        this->pose_pub->Publish(msg);
     }
 };
 
