@@ -11,6 +11,13 @@
       <uri>model://ground_plane</uri>
     </include>
 
+    <!-- The Goal -->
+    <include>
+      <uri>model://checkerboard_plane</uri>
+      <name>goal</name>
+      <pose>20 0 0.01 0 0 0</pose>
+    </include>
+
     <!-- Brick wall segments -->
     <include>
       <uri>model://brick_box_3x1x3</uri>
@@ -89,12 +96,12 @@
 
     <!-- A testing model that includes the Velodyne sensor model -->
     <model name="teapot0">
+      <pose>-20 0 0 0 0 0</pose>
+
       <include>
         <uri>model://teapot</uri>
-        <pose>-20 0 0 0 0 0</pose>
       </include>
 
-      <!-- Attach the plugin to this model -->
       <plugin name="teapot_control" filename="libcar_control_plugin.so"/>
     </model>
 

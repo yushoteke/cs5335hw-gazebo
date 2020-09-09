@@ -13,7 +13,7 @@ using namespace gazebo;
 using namespace gazebo::transport;
 
 Robot::Robot(int argc, char* argv[], void (*cb)(Robot*))
-    : on_update(cb)
+    : on_update(cb), task_done(false)
 {
     client::setup(argc, argv);
     node = NodePtr(new Node());
@@ -49,12 +49,19 @@ Robot::~Robot()
 }
 
 void
-Robot::wait()
+Robot::do_stuff()
 {
-    while (true) {
-        node->ProcessIncoming();
+    while (!task_done) {
         gazebo::common::Time::MSleep(10);
     }
+
+    gazebo::common::Time::MSleep(100);
+}
+
+void
+Robot::done()
+{
+    this->task_done = true;
 }
 
 void
@@ -74,21 +81,29 @@ Robot::set_turn(double turn)
 void
 Robot::on_scan(ConstLaserScanStampedPtr &msg)
 {
-    cout << "got on_scan" << endl;
     msgs::LaserScan scan = msg->scan();
-
     auto xs = scan.ranges();
-    cout << "xs.size = " << xs.size() << endl;
 
-    float min_val = 999.0;
-    long  min_idx = 0;
+    this->hits.clear();
     for (long ii = 0; ii < xs.size(); ++ii) {
-        float xx = xs[ii];
-        if (xx < min_val) {
-            min_val = xs[ii];
-            min_idx = ii;
-        }
+        double range = xs[ii];
+        double theta = scan.angle_min() + ii*scan.angle_step();
+        this->hits.push_back(LaserHit(range, theta));
     }
 
-    cout << "min val = " << min_val << " @ " << min_idx << endl;
+    this->on_update(this);
+}
+
+void
+Robot::on_pose(ConstPoseStampedPtr &msg)
+{
+    auto pos = msg->pose().position();
+    this->pos_x = pos.x();
+    this->pos_y = pos.y();
+
+    auto rot = msg->pose().orientation();
+    ignition::math::Quaternion<double> qrot(rot.w(), rot.x(), rot.y(), rot.z());
+    this->pos_t = qrot.Yaw();
+
+    this->on_update(this);
 }
