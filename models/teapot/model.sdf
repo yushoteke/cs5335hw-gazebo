@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 
-<sdf version="1.0">
+<sdf version="1.2">
   <model name="teapot">
     <link name="chassis">
       <pose>0 0 0.135  0 0 0</pose>

@@ -5,7 +5,7 @@ all: $(LIB)
 
 $(LIB):
 	(cd car_control && make)
-	cp car_control/$(LIB) .
+	cp car_control/*.so .
 
 clean:
 	rm -rf $(LIB)
